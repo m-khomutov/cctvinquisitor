@@ -6,7 +6,7 @@ from collections import namedtuple
 from enum import IntEnum
 from typing import Tuple, Union
 from .interface import Interface
-from display.display import DisplayForm, DisplayException
+from ..display.display import DisplayForm, DisplayException
 
 
 State: IntEnum = IntEnum('State', ('INITIAL',

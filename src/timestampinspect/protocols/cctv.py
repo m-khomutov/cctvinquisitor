@@ -6,7 +6,7 @@ from collections import namedtuple
 from typing import List, Tuple, Dict, Union
 import types
 from .interface import Interface
-from display.display import DisplayForm
+from ..display.display import DisplayForm
 
 
 FlvHeader: namedtuple = namedtuple('FlvHeader', 'signature version audio video offset')

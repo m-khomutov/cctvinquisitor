@@ -7,7 +7,7 @@ from base64 import b64encode
 from datetime import datetime
 from typing import Tuple, Union
 from .interface import Interface
-from display.display import DisplayForm
+from ..display.display import DisplayForm
 from .rtsp import Source as GenericRtsp
 
 

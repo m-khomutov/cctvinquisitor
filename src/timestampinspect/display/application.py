@@ -9,7 +9,7 @@ from .display import DisplayException, DisplayForm
 from .axon import AxonForm
 from .cctv import CctvForm
 from .rtsp import RtspForm
-from protocols import connection, axon, cctv, rtsp
+from ..protocols import connection, axon, cctv, rtsp
 from typing import List, Tuple, Union
 
 
