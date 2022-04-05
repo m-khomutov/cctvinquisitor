@@ -13,6 +13,10 @@ from protocols import connection, axon, cctv, rtsp
 from typing import List, Tuple, Union
 
 
+def run():
+    Application.create().run()
+
+
 class Application(npyscreen.NPSAppManaged):
     @staticmethod
     def create() -> Application:

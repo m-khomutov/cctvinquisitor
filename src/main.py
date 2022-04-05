@@ -1,5 +1,5 @@
 """Axon testing tool"""
-from display.application import Application
+from display.application import run
 
 if __name__ == '__main__':
-    Application.create().run()
+    run()
