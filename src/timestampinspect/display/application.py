@@ -1,6 +1,7 @@
 """NPSAppManaged application to manage the display"""
 from __future__ import annotations
 import argparse
+import hashlib
 import socket
 
 import npyscreen
@@ -10,6 +11,8 @@ from .axon import AxonForm
 from .cctv import CctvForm
 from .rtsp import RtspForm
 from ..protocols import connection, axon, cctv, rtsp
+from Crypto.Cipher import AES
+from base64 import b32encode
 from typing import List, Tuple, Union
 
 
@@ -30,11 +33,16 @@ class Application(npyscreen.NPSAppManaged):
                             default=0,
                             help='period to ask for position sec. (def. 0 - no requests)')
         parser.add_argument('-speed', type=int, default=1, help='Axon stream speed (def. 1)')
+        parser.add_argument('-cdn_password', type=str, help='used with cdn to encode content to aes128ecb')
+        parser.add_argument('-cdn_id', type=str, default='id', help='used with cdn as camera ID (def. "id"')
         args: argparse.Namespace = parser.parse_args()
         m = re.search(r'(?P<proto>\w{4})://(?P<ip>[^/\r\n]+):(?P<port>\d{3,6})/(?P<content>.+)', args.url)
         if not m or m['proto'] not in ['http', 'rtsp']:
             raise DisplayException(f'invalid url {args.url}')
         if m['proto'] == 'http':
+            if args.cdn_password:
+                return CdnApplication((m['ip'], int(m['port'])), m['content'],
+                                      args.cdn_password, args.cdn_id, int(args.pos_period))
             return CctvApplication((m['ip'], int(m['port'])), m['content'], int(args.cp), int(args.pos_period))
         elif 'SourceEndpoint.' in m['content']:
             return AxonApplication((m['ip'], int(m['port'])), m['content'])
@@ -83,6 +91,45 @@ class CctvApplication(Application):
                                   cctv.Source(form, self._content, self._control_port),
                                   self._pos_period)
         self._connection.start()
+
+
+class CdnApplication(Application):
+    """NPSAppManaged application to manage the CCTV display"""
+    def __init__(self, address: Tuple[str, int], content: str, password: str, camera_id: str, pos_period: int = 0):
+        super().__init__(address, content)
+        self._pos_period: int = pos_period
+        self._control_port = 2232
+        url: List[str, ...] = content.split('?')
+        if len(url) == 2:
+            self._content = url[0]
+            params: str = url[1]
+        self._encode_content(password, camera_id)
+        if params:
+            self._content += '/' + params
+
+    def onStart(self) -> None:
+        self.addForm('MAIN', CctvForm, name='cctv', connection=self._connection)
+
+    def on_created(self, form: DisplayForm):
+        self._connection: connection.Connection[cctv.Source] = \
+            connection.Connection(self._address,
+                                  cctv.Source(form, self._content, self._control_port),
+                                  self._pos_period)
+        self._connection.start()
+
+    @staticmethod
+    def _key(password: str) -> bytes:
+        sha1: bytes = hashlib.sha1(password.encode()).hexdigest()[:32]
+        return b''.join([int(sha1[i:i + 2], 16).to_bytes(1, 'big') for i in range(0, len(sha1), 2)])
+
+    def _encode_content(self, password: str, camera_id: str):
+        cdn_url: str = f'{self._address[0]}:{self._address[1]}/{camera_id}/{self._content}'
+        cdn_url += chr(0x0e) * (16 - len(cdn_url) % 16)
+        cipher = AES.new(self._key(password), AES.MODE_ECB)
+        enc: bytes = b''
+        for i in range(0, len(cdn_url), 16):
+            enc += cipher.encrypt(cdn_url[i:i + 16].encode())
+        self._content = b32encode(enc).rstrip(b'=').decode('utf-8')
 
 
 class AxonApplication(Application):
