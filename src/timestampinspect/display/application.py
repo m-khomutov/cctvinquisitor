@@ -8,9 +8,9 @@ import npyscreen
 import re
 from .display import DisplayException, DisplayForm
 from .axon import AxonForm
-from .cctv import CctvForm
+from .flv import FlvForm
 from .rtsp import RtspForm
-from ..protocols import connection, axon, cctv, rtsp
+from ..protocols import connection, axon, flv, rtsp
 from Crypto.Cipher import AES
 from base64 import b32encode
 from typing import List, Tuple, Union
@@ -83,12 +83,12 @@ class CctvApplication(Application):
         self._pos_period: int = pos_period
 
     def onStart(self) -> None:
-        self.addForm('MAIN', CctvForm, name='cctv', connection=self._connection)
+        self.addForm('MAIN', FlvForm, name='cctv', connection=self._connection)
 
     def on_created(self, form: DisplayForm):
-        self._connection: connection.Connection[cctv.Source] = \
+        self._connection: connection.Connection[flv.Source] = \
             connection.Connection(self._address,
-                                  cctv.Source(form, self._content, self._control_port),
+                                  flv.Source(form, self._content, self._control_port),
                                   self._pos_period)
         self._connection.start()
 
@@ -108,12 +108,12 @@ class CdnApplication(Application):
             self._content += '/' + params
 
     def onStart(self) -> None:
-        self.addForm('MAIN', CctvForm, name='cctv', connection=self._connection)
+        self.addForm('MAIN', FlvForm, name='cdn', connection=self._connection)
 
     def on_created(self, form: DisplayForm):
-        self._connection: connection.Connection[cctv.Source] = \
+        self._connection: connection.Connection[flv.Source] = \
             connection.Connection(self._address,
-                                  cctv.Source(form, self._content, self._control_port),
+                                  flv.Source(form, self._content, self._control_port),
                                   self._pos_period)
         self._connection.start()
 

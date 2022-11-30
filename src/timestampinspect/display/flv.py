@@ -3,7 +3,7 @@ from .display import DisplayForm, MultilineBox
 from typing import Tuple
 
 
-class CctvForm(DisplayForm):
+class FlvForm(DisplayForm):
     """Form to display data"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
